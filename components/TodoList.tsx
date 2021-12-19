@@ -4,8 +4,9 @@ import palette from '../styles/palette'
 import {TodoType} from '../types/todo.d'
 import TrashIcon from '../public/statics/svg/ic_trash.svg'
 import CheckIcon from '../public/statics/svg/ic_check.svg'
-import {checkTodoAPI} from '../lib/api/todo'
+import {checkTodoAPI, deleteTodoAPI} from '../lib/api/todo'
 import Router from 'next/router'
+import {triggerAsyncId} from 'async_hooks'
 //typeScript의 경우 javascript와는달리
 // 키에 대한 타입까지도 정의해야함
 // object.a 는 object[a]와 동일한데,
@@ -205,6 +206,17 @@ const TodoList: React.FC<IProps> = ({todos}) => {
     }
   }
 
+  //Todo 삭제하기
+  const deleteTodo = async (id: number) => {
+    try {
+      await deleteTodoAPI(id)
+      const newTodos = localTodos.filter((todo) => todo.id !== id)
+      setLocalTodos(newTodos)
+      console.log('삭제했습니다.')
+    } catch (e) {
+      console.log(e)
+    }
+  }
   return (
     <Container>
       <div className='todo-list-header'>
@@ -237,20 +249,22 @@ const TodoList: React.FC<IProps> = ({todos}) => {
             <div className='todo-right-side'>
               {todo.checked && (
                 <>
-                  <TrashIcon className='todo-trash-can' onClick={() => {}} />
-                  <CheckIcon
-                    className='todo-check-mark'
+                  <TrashIcon
+                    className='todo-trash-can'
                     onClick={() => {
-                      checkTodo(todo.id)
+                      deleteTodo(todo.id)
                     }}
                   />
+                  <CheckIcon className='todo-check-mark' onClick={() => {}} />
                 </>
               )}
               {!todo.checked && (
                 <button
                   type='button'
                   className='todo-button'
-                  onClick={() => {}}
+                  onClick={() => {
+                    checkTodo(todo.id)
+                  }}
                 />
               )}
             </div>
