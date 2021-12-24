@@ -39,7 +39,8 @@ const bindMiddleware = (middleware: any) => {
 //App컴포넌트에서 wrapper로 사용하기위해 next-redux-wrapper에서 createWrapper를 import 하여 wrapper를 만들었습니다.
 //wrapper를 사용하기위해 App컴포넌트에서 사용하도록 하겠습니다.
 const initStore = () => {
-  return createStore(reducer, bindMiddleware([]))
+  const store = createStore(reducer, bindMiddleware([]))
+  return store
 }
 
 export const wrapper = createWrapper(initStore)
