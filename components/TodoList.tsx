@@ -5,8 +5,10 @@ import {TodoType} from '../types/todo.d'
 import TrashIcon from '../public/statics/svg/ic_trash.svg'
 import CheckIcon from '../public/statics/svg/ic_check.svg'
 import {checkTodoAPI, deleteTodoAPI} from '../lib/api/todo'
-import Router from 'next/router'
-import {triggerAsyncId} from 'async_hooks'
+import {useSelector} from '../store'
+import {todoActions, clearFunc} from '../store/todo'
+import {useDispatch} from 'react-redux'
+
 //typeScript의 경우 javascript와는달리
 // 키에 대한 타입까지도 정의해야함
 // object.a 는 object[a]와 동일한데,
@@ -17,9 +19,6 @@ type ObjectIndexType = {
   [key: string]: number | undefined
 }
 
-interface IProps {
-  todos: TodoType[]
-}
 const Container = styled.div`
   width: 100%;
   .todo-list-header {
@@ -126,8 +125,10 @@ const Container = styled.div`
     }
   }
 `
-const TodoList: React.FC<IProps> = ({todos}) => {
-  const [localTodos, setLocalTodos] = React.useState(todos)
+const TodoList: React.FC = () => {
+  const dispatch = useDispatch()
+  const todos = useSelector((state) => state.todo.todos)
+
   //방법1
   // const getTodoColorNums = useCallback(() => {
   //   let red = 0
@@ -165,7 +166,7 @@ const TodoList: React.FC<IProps> = ({todos}) => {
   // const todoColorNums = useMemo(getTodoColorNums, [todos])
   const todoColorNums2 = useMemo(() => {
     const colors: ObjectIndexType = {}
-    localTodos.forEach((todo) => {
+    todos.forEach((todo) => {
       const value = colors[todo.color]
       if (!value) {
         //해당키의 값이 없었다면
@@ -175,7 +176,7 @@ const TodoList: React.FC<IProps> = ({todos}) => {
       }
     })
     return colors
-  }, [localTodos])
+  }, [todos])
 
   //Todo check 기능
   const checkTodo = async (id: number) => {
@@ -194,13 +195,13 @@ const TodoList: React.FC<IProps> = ({todos}) => {
 
       //방법3  , 위의 방법 1과 방법2는 변경시킨 데이터를, api를 통해서 새로받아와서 반영결과를 보여준다.
       //하지만 데이터를 새로불러오지 않고 뷰를 변화시키는 방법 3가 제일좋다.
-      const newTodos = localTodos.map((todo) => {
+      const newTodos = todos.map((todo) => {
         if (todo.id === id) {
           return {...todo, checked: !todo.checked}
         }
         return todo
       })
-      setLocalTodos(newTodos)
+      dispatch(todoActions.setTodo(newTodos))
     } catch (e) {
       console.log(e)
     }
@@ -210,8 +211,8 @@ const TodoList: React.FC<IProps> = ({todos}) => {
   const deleteTodo = async (id: number) => {
     try {
       await deleteTodoAPI(id)
-      const newTodos = localTodos.filter((todo) => todo.id !== id)
-      setLocalTodos(newTodos)
+      const newTodos = todos.filter((todo) => todo.id !== id)
+      dispatch(todoActions.setTodo(newTodos))
       console.log('삭제했습니다.')
     } catch (e) {
       console.log(e)
@@ -219,9 +220,15 @@ const TodoList: React.FC<IProps> = ({todos}) => {
   }
   return (
     <Container>
+      <button
+        onClick={(e) => {
+          dispatch(clearFunc())
+        }}>
+        clear
+      </button>
       <div className='todo-list-header'>
         <p className='todo-list-last-todo'>
-          남은 TODO <span>{localTodos.length}개</span>
+          남은 TODO <span>{todos.length}개</span>
         </p>
         <div className='todo-list-header-colors'>
           {/* Object.keys()를 이용하면 객체의 키값들을 배열로 얻을수가있다. */}
@@ -235,7 +242,7 @@ const TodoList: React.FC<IProps> = ({todos}) => {
       </div>
 
       <ul className='todo-list'>
-        {localTodos.map((todo) => (
+        {todos.map((todo) => (
           <li className='todo-item' key={todo.id}>
             <div className='todo-left-side'>
               <div className={`todo-color-block bg-${todo.color}`} />
